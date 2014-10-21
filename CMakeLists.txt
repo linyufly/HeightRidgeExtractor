@@ -6,5 +6,8 @@ find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 
 add_executable(GradientFilterTest gradient_filter_test.cc)
+add_executable(PrincipalComponentTest principal_component_test.cc
+                                      math.cc)
 
 target_link_libraries(GradientFilterTest ${VTK_LIBRARIES})
+target_link_libraries(PrincipalComponentTest ${VTK_LIBRARIES})

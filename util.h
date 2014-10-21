@@ -9,7 +9,7 @@ T **create_matrix(int num_of_rows, int num_of_cols) {
   T **matrix = new T *[num_of_rows];
 
   for (int i = 0; i < num_of_rows; i++) {
-    matrix[i] = T + i * num_of_cols;
+    matrix[i] = data_array + i * num_of_cols;
   }
 
   return matrix;

@@ -2,6 +2,8 @@
 
 #include "math.h"
 
+#include "util.h"
+
 #include <vtkMath.h>
 
 double **matrix_matrix_multiplication(double **a, double **b, int m, int n, int p) {
@@ -34,7 +36,7 @@ double *principal_component(double **vectors, int n, int k) {
   double *eigen_values = new double[k];
   double **eigen_vectors = create_matrix<double>(k, k);
 
-  vtkMath::Jacobi(symm, eigen_values, eigen_vectors);
+  vtkMath::JacobiN(symm, k, eigen_values, eigen_vectors);
 
   double *result = new double[k];
   for (int i = 0; i < k; i++) {
