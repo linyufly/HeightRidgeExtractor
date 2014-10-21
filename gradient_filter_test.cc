@@ -6,12 +6,14 @@
 #include <vtkGradientFilter.h>
 #include <vtkIndent.h>
 #include <vtkPointData.h>
+#include <vtkDataArray.h>
 
 #include <cstdio>
 
 #include <iostream>
 
 const char *kDataFile = "data/gyre_half.vtk";
+const int kNumberOfSamples = 10;
 
 vtkStructuredPoints *read_grid() {
   vtkSmartPointer<vtkStructuredPointsReader> reader =
@@ -62,9 +64,30 @@ int main() {
   printf("\n");
 
   vtkStructuredPoints *gradient = get_gradient(grid);
+  printf("Active scalar is %s.\n", gradient->GetPointData()->GetScalars()->GetName());
+  gradient->GetPointData()->GetScalars()->SetName("gradient");
+  printf("New active scalar is %s.\n", gradient->GetPointData()->GetScalars()->GetName());
   printf("Check the gradient grid\n");
   check_grid(gradient);
   printf("\n");
+
+  vtkStructuredPoints *hessian = get_gradient(gradient);
+  printf("Check the hessian grid\n");
+  check_grid(hessian);
+  printf("\n");
+
+  double tensor[9];
+  for (int i = 0; i < kNumberOfSamples; i++) {
+    hessian->GetPointData()->GetScalars()->GetTuple(i, tensor);
+    for (int row = 0; row < 3; row++) {
+      for (int col = 0; col < 3; col++) {
+        if (col) printf(" ");
+        printf("%lf", tensor[row * 3 + col]);
+      }
+      printf("\n");
+    }
+    printf("\n");
+  }
 
   return 0;
 }
