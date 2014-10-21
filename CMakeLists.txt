@@ -8,6 +8,9 @@ include(${VTK_USE_FILE})
 add_executable(GradientFilterTest gradient_filter_test.cc)
 add_executable(PrincipalComponentTest principal_component_test.cc
                                       math.cc)
+add_executable(HeightRidgeExtractorTest height_ridge_extractor_test.cc
+                                        height_ridge_extractor.cc)
 
 target_link_libraries(GradientFilterTest ${VTK_LIBRARIES})
 target_link_libraries(PrincipalComponentTest ${VTK_LIBRARIES})
+target_link_libraries(HeightRidgeExtractorTest ${VTK_LIBRARIES})

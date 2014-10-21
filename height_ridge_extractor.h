@@ -8,7 +8,11 @@ class vtkPolyData;
 
 class HeightRidgeExtractor {
  public:
-   vtkPolyData *extract_ridges(const vtkStructuredPoints &scalar_field);
-}
+  static void get_gradient_and_hessian(vtkStructuredPoints *scalar_field,
+                                       vtkStructuredPoints **gradient,
+                                       vtkStructuredPoints **hessian);
+
+  vtkPolyData *extract_ridges(vtkStructuredPoints *scalar_field);
+};
 
 #endif  // HEIGHT_RIDGE_EXTRACTOR_H_
