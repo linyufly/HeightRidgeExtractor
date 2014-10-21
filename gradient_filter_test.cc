@@ -23,7 +23,7 @@ vtkStructuredPoints *read_grid() {
   reader->Update();
 
   vtkStructuredPoints *grid = vtkStructuredPoints::New();
-  grid->DeepCopy(reader->GetOutput());
+  grid->ShallowCopy(reader->GetOutput());
 
   return grid;
 }
@@ -50,7 +50,7 @@ vtkStructuredPoints *get_gradient(vtkStructuredPoints *grid) {
   grad_filter->Update();
   
   vtkStructuredPoints *gradient = vtkStructuredPoints::New();
-  gradient->DeepCopy(grad_filter->GetOutput());
+  gradient->ShallowCopy(grad_filter->GetOutput());
 
   gradient->GetPointData()->SetActiveScalars("Gradients");
 
