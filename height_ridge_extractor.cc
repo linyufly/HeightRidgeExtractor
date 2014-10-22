@@ -13,6 +13,7 @@
 #include <vtkDataArray.h>
 #include <vtkCellArray.h>
 #include <vtkPoints.h>
+#include <vtkMath.h>
 
 #include <cstring>
 
@@ -146,7 +147,7 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
               gradient_field->GetPointData()->GetScalars()
                                             ->GetTuple(point_id, tensor);
               for (int i = 0; i < 3; i++) {
-                grad[dx][dy][dz] = tensor[i];
+                grad[dx][dy][dz][i] = tensor[i];
               }
             }
           }
@@ -200,6 +201,8 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
         }
 
         for (int i = 0; i < numVertsTable[cube_code]; i += 3) {
+          mesh_cells->InsertNextCell(3);
+
           for (int j = 0; j < 3; j++) {
             int edge_idx = triTable[cube_code][i + j];
             int vtx_1 = kEdgeList[edge_idx][0];
@@ -215,16 +218,56 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
             if (kVertexList[vtx_1][dim] > kVertexList[vtx_2][dim]) {
               std::swap(vtx_1, vtx_2);
             }
+
+            int start_x = kVertexList[vtx_1][0];
+            int start_y = kVertexList[vtx_1][1];
+            int start_z = kVertexList[vtx_1][2];
+
+            int finish_x = kVertexList[vtx_2][0];
+            int finish_y = kVertexList[vtx_2][1];
+            int finish_z = kVertexList[vtx_2][2];
+
+            // Insert a new point to the mesh if necessary
+            if (edge_mark[x + start_x][y + start_y][z + start_z][dim] == -1) {
+              edge_mark[x + start_x][y + start_y][z + start_z][dim] =
+                  mesh_points->GetNumberOfPoints();
+
+              double dot_prod_1 = dot_prod[start_x][start_y][start_z];
+              double dot_prod_2 = dot_prod[finish_x][finish_y][finish_z];
+
+              if (dot_prod_1 * dot_prod_2 > 0.0) {
+                report_error("Same sign in marching cubes");
+              }
+
+              double lambda = -dot_prod_1 / (dot_prod_2 - dot_prod_1);
+
+              double aug_x = (finish_x - start_x) * spacing[0] * lambda;
+              double aug_y = (finish_y - start_y) * spacing[1] * lambda;
+              double aug_z = (finish_z - start_z) * spacing[2] * lambda;
+
+              double point_x = origin[0] + spacing[0] * (x + start_x) + aug_x;
+              double point_y = origin[1] + spacing[1] * (y + start_y) + aug_y;
+              double point_z = origin[2] + spacing[2] * (z + start_z) + aug_z;
+
+              mesh_points->InsertNextPoint(point_x, point_y, point_z);
+            }
+
+            mesh_cells->InsertCellPoint(
+                edge_mark[x + start_x][y + start_y][z + start_z][dim]);
           }
         }
       }
     }
   }
 
+  vtkPolyData *mesh = vtkPolyData::New();
+  mesh->SetPoints(mesh_points);
+  mesh->SetPolys(mesh_cells);
+
   delete_4d_array(edge_mark);
 
   gradient_field->Delete();
   hessian_field->Delete();
 
-  return NULL;
+  return mesh;
 }

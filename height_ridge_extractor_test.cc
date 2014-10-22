@@ -9,6 +9,7 @@
 #include <vtkDataArray.h>
 #include <vtkIndent.h>
 #include <vtkPolyData.h>
+#include <vtkPolyDataWriter.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -16,6 +17,7 @@
 #include <iostream>
 
 const char *kDataFile = "data/gyre_half.vtk";
+const char *kPolyDataFile = "poly_mesh.vtk";
 const int kNumberOfSamples = 10;
 
 void get_gradient_and_hessian_test() {
@@ -65,6 +67,19 @@ void extract_ridges_test() {
 
   HeightRidgeExtractor extractor;
   vtkPolyData *ridges = extractor.extract_ridges(reader->GetOutput());
+
+  int num_points = ridges->GetNumberOfPoints();
+  int num_cells = ridges->GetNumberOfCells();
+
+  printf("num_points = %d\n", num_points);
+  printf("num_cells = %d\n", num_cells);
+
+  vtkSmartPointer<vtkPolyDataWriter> writer =
+    vtkSmartPointer<vtkPolyDataWriter>::New();
+
+  writer->SetFileName(kPolyDataFile);
+  writer->SetInputData(ridges);
+  writer->Write();
 
   if (ridges) {
     ridges->Delete();
