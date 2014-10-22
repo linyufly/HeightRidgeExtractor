@@ -3,6 +3,7 @@
 #include "height_ridge_extractor.h"
 #include "util.h"
 #include "math.h"
+#include "marchingCubesTable.h"
 
 #include <vtkStructuredPoints.h>
 #include <vtkPolyData.h>
@@ -10,8 +11,12 @@
 #include <vtkSmartPointer.h>
 #include <vtkPointData.h>
 #include <vtkDataArray.h>
+#include <vtkCellArray.h>
+#include <vtkPoints.h>
 
 #include <cstring>
+
+#include <algorithm>
 
 namespace {
 
@@ -32,6 +37,21 @@ double dot_product_3d(double *a, double *b) {
     result += a[i] * b[i];
   }
   return result;
+}
+
+// e3 is the eigen vector of the smallest eigen value.
+void get_e3(double **hessian, double *e3) {
+  double *eigen_values = new double[3];
+  double **eigen_vectors = create_matrix<double>(3, 3);
+  vtkMath::Jacobi(hessian, eigen_values, eigen_vectors);
+
+  for (int i = 0; i < 3; i++) {
+    e3[i] = eigen_vectors[i][2];
+  }
+
+  delete [] eigen_values;
+  delete_matrix(eigen_vectors);
+  delete_matrix(hessian);
 }
 
 }
@@ -80,26 +100,21 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
   int ny = dimensions[1];
   int nz = dimensions[2];
 
-  int *mark_data = new int[nx * ny * nz * 3];
-  memset(mark_data, 255, sizeof(int) * nx * ny * nz * 3);
-
-  int **mark_xyz = new int *[nx * ny * nz];
-  for (int i = 0; i < nx * ny * nz; i++) {
-    mark_xyz[i] = mark_data + i * 3;
+  int ****edge_mark = create_4d_array<int>(nx, ny, nz, 3);
+  for (int x = 0; x < nx; x++) {
+    for (int y = 0; y < ny; y++) {
+      for (int z = 0; z < nz; z++) {
+        for (int d = 0; d < 3; d++) {
+          edge_mark[x][y][z][d] = -1;
+        }
+      }
+    }
   }
 
-  int ***mark_xy = new int **[nx * ny];
-  for (int i = 0; i < nx * ny; i++) {
-    mark_xy[i] = mark_xyz + i * nz;
-  }
-
-  // mark_x[i][j][k][d] indicates a unique edge.
-  int ****mark_x = new int ***[nx];
-  for (int i = 0; i < nx; i++) {
-    mark_x[i] = mark_xy + i * ny;
-  }
-
-  int num_vertices = 0;
+  vtkSmartPointer<vtkPoints> mesh_points =
+      vtkSmartPointer<vtkPoints>::New();
+  vtkSmartPointer<vtkCellArray> mesh_cells =
+      vtkSmartPointer<vtkCellArray>::New();
 
   for (int x = 0; x + 1 < nx; x++) {
     for (int y = 0; y + 1 < ny; y++) {
@@ -126,19 +141,8 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
                 }
               }
 
-              double *eigen_values = new double[3];
-              double **eigen_vectors = create_matrix<double>(3, 3);
-              vtkMath::Jacobi(hessian, eigen_values, eigen_vectors);
-
-              // e3 indicates the eigen vector with the smallest eigen value.
-              for (int i = 0; i < 3; i++) {
-                e3[dx][dy][dz][i] = eigen_vectors[i][2];
-              }
-
-              delete [] eigen_values;
-              delete_matrix(eigen_vectors);
-              delete_matrix(hessian);
-
+              get_e3(hessian, e3[dx][dy][dz]);
+              
               gradient_field->GetPointData()->GetScalars()
                                             ->GetTuple(point_id, tensor);
               for (int i = 0; i < 3; i++) {
@@ -182,9 +186,42 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
         }
 
         delete [] pivot;
+
+        // Identify iso-surfaces
+        int cube_code = 0;
+        for (int i = 0; i < 8; i++) {
+          int dx = kVertexList[i][0];
+          int dy = kVertexList[i][1];
+          int dz = kVertexList[i][2];
+
+          if (dot_prod[dx][dy][dz] <= 0.0) {
+            cube_code |= (1 << i);
+          }
+        }
+
+        for (int i = 0; i < numVertsTable[cube_code]; i += 3) {
+          for (int j = 0; j < 3; j++) {
+            int edge_idx = triTable[cube_code][i + j];
+            int vtx_1 = kEdgeList[edge_idx][0];
+            int vtx_2 = kEdgeList[edge_idx][1];
+
+            int dim;
+            for (dim = 0; dim < 3; dim++) {
+              if (kVertexList[vtx_1][dim] != kVertexList[vtx_2][dim]) {
+                break;
+              }
+            }
+
+            if (kVertexList[vtx_1][dim] > kVertexList[vtx_2][dim]) {
+              std::swap(vtx_1, vtx_2);
+            }
+          }
+        }
       }
     }
   }
+
+  delete_4d_array(edge_mark);
 
   gradient_field->Delete();
   hessian_field->Delete();
