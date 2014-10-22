@@ -1,3 +1,6 @@
+// The original source code is from NVIDIA CUDA Samples. Mingcheng Chen
+// made slight modifications.
+
 /*
  * Copyright 1993-2012 NVIDIA Corporation.  All rights reserved.
  *
@@ -16,6 +19,8 @@
 
 #ifndef __MARCHING_CUBES_TABLE_H
 #define __MARCHING_CUBES_TABLE_H
+
+typedef unsigned int uint;
 
 // edge table maps 8-bit flag representing which cube vertices are inside
 // the isosurface to 12-bit number indicating which edges are intersected
