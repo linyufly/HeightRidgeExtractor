@@ -3,6 +3,10 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
+#include <cstring>
+
+void report_error(const char *format, ...);
+
 template<class T>
 T **create_matrix(int num_of_rows, int num_of_cols) {
   T *data_array = new T[num_of_rows * num_of_cols];
@@ -22,7 +26,7 @@ void delete_matrix(T **matrix) {
 }
 
 template<class T>
-T **create_4d_array(int n1, int n2, int n3, int n4) {
+T ****create_4d_array(int n1, int n2, int n3, int n4) {
   T *arr_1234 = new T[n1 * n2 * n3 * n4];
 
   T **arr_123 = new T *[n1 * n2 * n3];
