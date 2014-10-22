@@ -12,6 +12,7 @@ class HeightRidgeExtractor {
                                        vtkStructuredPoints **gradient,
                                        vtkStructuredPoints **hessian);
 
+  // scalar_field must be 3-dimensional.
   vtkPolyData *extract_ridges(vtkStructuredPoints *scalar_field);
 };
 

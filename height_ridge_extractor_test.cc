@@ -8,6 +8,7 @@
 #include <vtkPointData.h>
 #include <vtkDataArray.h>
 #include <vtkIndent.h>
+#include <vtkPolyData.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -47,11 +48,34 @@ void get_gradient_and_hessian_test() {
     printf("\n");
   }
 
+  gradient->Delete();
+  hessian->Delete();
+
   printf("} get_gradient_and_hessian_test\n\n");
+}
+
+void extract_ridges_test() {
+  printf("extract_ridges_test {\n");
+
+  vtkSmartPointer<vtkStructuredPointsReader> reader =
+      vtkSmartPointer<vtkStructuredPointsReader>::New();
+
+  reader->SetFileName(kDataFile);
+  reader->Update();
+
+  HeightRidgeExtractor extractor;
+  vtkPolyData *ridges = extractor.extract_ridges(reader->GetOutput());
+
+  if (ridges) {
+    ridges->Delete();
+  }
+
+  printf("} extract_ridges_test\n\n");
 }
 
 int main() {
   get_gradient_and_hessian_test();
+  extract_ridges_test();
 
   return 0;
 }
