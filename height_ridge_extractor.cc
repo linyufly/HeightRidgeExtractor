@@ -41,10 +41,13 @@ double dot_product_3d(double *a, double *b) {
 }
 
 // e3 is the eigen vector of the smallest eigen value.
-void get_e3(double **hessian, double *e3) {
+// l3 is the smallest eigen value.
+void get_e3(double **hessian, double *e3, double *l3) {
   double *eigen_values = new double[3];
   double **eigen_vectors = create_matrix<double>(3, 3);
   vtkMath::Jacobi(hessian, eigen_values, eigen_vectors);
+
+  *l3 = eigen_values[2];
 
   for (int i = 0; i < 3; i++) {
     e3[i] = eigen_vectors[i][2];
@@ -123,6 +126,8 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
         double dot_prod[3][3][3], e3[3][3][3][3], grad[3][3][3][3];
 
         // Collect e3 and grad
+        int num_pos = 0;
+
         for (int dx = 0; dx < 2; dx++) {
           for (int dy = 0; dy < 2; dy++) {
             for (int dz = 0; dz < 2; dz++) {
@@ -142,7 +147,11 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
                 }
               }
 
-              get_e3(hessian, e3[dx][dy][dz]);
+              double l3;
+              get_e3(hessian, e3[dx][dy][dz], &l3);
+              if (l3 > 0.0) {
+                num_pos++;
+              }
               
               gradient_field->GetPointData()->GetScalars()
                                             ->GetTuple(point_id, tensor);
@@ -151,6 +160,10 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
               }
             }
           }
+        }
+
+        if (num_pos > 0) {
+          continue;
         }
 
         // Re-orientate e3
