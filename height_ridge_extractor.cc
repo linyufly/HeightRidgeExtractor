@@ -128,6 +128,8 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
         // Collect e3 and grad
         int num_pos = 0;
 
+        bool invalid = false;
+
         for (int dx = 0; dx < 2; dx++) {
           for (int dy = 0; dy < 2; dy++) {
             for (int dz = 0; dz < 2; dz++) {
@@ -137,6 +139,12 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
 
               double **hessian = create_matrix<double>(3, 3);
               int point_id = (curr_z * ny + curr_y) * nx + curr_x;
+
+              /// DEBUG ///
+              if (scalar_field->GetPointData()->GetScalars()
+                                              ->GetTuple1(point_id) < 0.3) {  // -0.99, 0.3 for P96
+                invalid = true;
+              }
 
               double tensor[9];
               hessian_field->GetPointData()->GetScalars()
@@ -160,6 +168,10 @@ vtkPolyData *HeightRidgeExtractor::extract_ridges(
               }
             }
           }
+        }
+
+        if (invalid) {
+          continue;
         }
 
         if (num_pos > 0) {

@@ -16,7 +16,8 @@
 
 #include <iostream>
 
-const char *kDataFile = "data/gyre_half.vtk";
+// const char *kDataFile = "data/gyre_half.vtk";
+const char *kDataFile = "../Watershed/smoothed_scalar.vtk";
 const char *kPolyDataFile = "poly_mesh.vtk";
 const int kNumberOfSamples = 10;
 
@@ -89,7 +90,7 @@ void extract_ridges_test() {
 }
 
 int main() {
-  get_gradient_and_hessian_test();
+  // get_gradient_and_hessian_test();
   extract_ridges_test();
 
   return 0;
